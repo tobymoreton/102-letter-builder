@@ -43,16 +43,9 @@
   </div>
 
   <div class="card">
-    <p class="doctype" id="doctype">Inter Partes Memorandum of Advice</p>
-    <p class="cap" id="caseref-cap">Case</p>
-    <div class="grid">
-      <label>Matter name (surname)<input id="f_MatterName" type="text"></label>
-      <label>Fee earner<input id="f_FeeEarner" type="text"></label>
-      <label>Draftsman<input id="f_Draftsman" type="text"></label>
-      <label>Client reference<input id="f_CaseRef" type="text"></label>
-      <label>TMC reference<input id="f_TMCRef" type="text"></label>
-      <label>Date<input id="f_Date" type="text"></label>
-    </div>
+    <p class="doctype" id="doctype"></p>
+    <p class="cap">Case</p>
+    <div class="grid" id="field-grid"></div>
   </div>
 
   <div class="actions">
@@ -61,7 +54,7 @@
     <span id="status"></span>
   </div>
 
-  <p class="hint">Opened from the SharePoint case button, the fields above pre-fill automatically. Check them, then click <strong>Generate &amp; download</strong>. The completed memo downloads as a Word document for the draftsman to complete the figures and narrative.</p>
+  <p class="hint" id="hint"></p>
 
 </div>
 
@@ -72,18 +65,77 @@
 
 <script>
 (function(){
-  // ---- Template config: this build = InterPartesMemoOfAdvice ----
-  var TEMPLATE = {
-    name: "InterPartesMemoOfAdvice",
-    master: "masters/InterPartesMemoOfAdvice.docx",
-    // placeholder -> input element id
-    fields: ["MatterName","FeeEarner","Draftsman","CaseRef","TMCRef","Date"],
-    // which fields must be present to allow generation
-    required: ["MatterName","FeeEarner","Draftsman","CaseRef","TMCRef"]
+
+  // ================================================================
+  // TEMPLATE REGISTRY
+  // To add a new template: add an entry here + master in masters/
+  // ================================================================
+  var TEMPLATES = {
+    "InterPartesMemoOfAdvice": {
+      displayName: "Inter Partes Memorandum of Advice",
+      master: "masters/InterPartesMemoOfAdvice.docx",
+      refField: "TMCRef",
+      fields: [
+        { id:"MatterName",  label:"Matter name (surname)",     required:true  },
+        { id:"FeeEarner",   label:"Fee earner",                required:true  },
+        { id:"Draftsman",   label:"Draftsman",                 required:true  },
+        { id:"CaseRef",     label:"Client reference",          required:true  },
+        { id:"TMCRef",      label:"TMC reference",             required:true  },
+        { id:"Date",        label:"Date",                      required:false }
+      ],
+      hint: "Opened from the SharePoint case button, the fields above pre-fill automatically. Check them, then click <strong>Generate &amp; download</strong>. The completed memo downloads as a Word document for the draftsman to complete the figures and narrative."
+    },
+    "FormalServiceNonHJA": {
+      displayName: "Formal Service Letter (Non-HJA)",
+      master: "masters/FormalServiceNonHJA.docx",
+      refField: "OurRef",
+      fields: [
+        { id:"OppoFirm",         label:"Opponent firm",            required:true  },
+        { id:"OppoAddress1",     label:"Opponent address 1",       required:true  },
+        { id:"OppoAddress2",     label:"Opponent address 2",       required:false },
+        { id:"OppoAddress3",     label:"Opponent address 3",       required:false },
+        { id:"OppoAddress4",     label:"Opponent address 4",       required:false },
+        { id:"OppoAddress5",     label:"Opponent address 5",       required:false },
+        { id:"YourRef",          label:"Opponent reference",       required:false },
+        { id:"OurRef",           label:"TMC reference",            required:true  },
+        { id:"FullCaseName",     label:"Full case name",           required:true  },
+        { id:"Firm",             label:"Instructing firm",         required:true  },
+        { id:"TotalInterest",    label:"Total interest to date",   required:true  },
+        { id:"DailyRatePeriod4", label:"Daily interest rate",      required:true  },
+        { id:"Date",             label:"Date",                     required:false }
+      ],
+      hint: "Opened from the SharePoint case button, the fields above pre-fill automatically. Check the interest figures, then click <strong>Generate &amp; download</strong>."
+    }
   };
 
+  // ================================================================
+  // RESOLVE ACTIVE TEMPLATE from ?template= param (default: memo)
+  // ================================================================
+  var params = new URLSearchParams(window.location.search);
+  var templateKey = params.get("template") || "InterPartesMemoOfAdvice";
+  var TEMPLATE = TEMPLATES[templateKey] || TEMPLATES["InterPartesMemoOfAdvice"];
+
+  // ================================================================
+  // BUILD THE FORM DYNAMICALLY
+  // ================================================================
+  document.getElementById("doctype").textContent = TEMPLATE.displayName;
+  document.getElementById("hint").innerHTML = TEMPLATE.hint;
+
+  var grid = document.getElementById("field-grid");
+  TEMPLATE.fields.forEach(function(f){
+    var lbl = document.createElement("label");
+    lbl.textContent = f.label;
+    var inp = document.createElement("input");
+    inp.type = "text";
+    inp.id = "f_" + f.id;
+    lbl.appendChild(inp);
+    grid.appendChild(lbl);
+  });
+
+  // ================================================================
+  // HELPERS
+  // ================================================================
   function el(id){ return document.getElementById(id); }
-  function val(name){ return el("f_"+name).value.trim(); }
 
   function flash(msg, cls){
     var s = el("status"); s.textContent = msg;
@@ -97,17 +149,20 @@
     return now.getDate() + " " + months[now.getMonth()] + " " + now.getFullYear();
   }
 
-  // ---- Pre-fill from URL query string (SP Infowise button) ----
-  (function prefill(){
-    var p = new URLSearchParams(window.location.search);
-    TEMPLATE.fields.forEach(function(f){
-      var v = p.get(f);
-      if(v) el("f_"+f).value = v;
-    });
-    // Date: if not supplied, derive it
-    if(!el("f_Date").value) el("f_Date").value = deriveDate();
-  })();
+  // ================================================================
+  // PREFILL FROM URL PARAMS
+  // ================================================================
+  TEMPLATE.fields.forEach(function(f){
+    var v = params.get(f.id);
+    var inp = el("f_"+f.id);
+    if(inp && v) inp.value = v;
+  });
+  var dateEl = el("f_Date");
+  if(dateEl && !dateEl.value) dateEl.value = deriveDate();
 
+  // ================================================================
+  // GENERATE
+  // ================================================================
   function loadBinary(url){
     return new Promise(function(resolve, reject){
       PizZipUtils.getBinaryContent(url, function(err, data){
@@ -118,10 +173,12 @@
 
   function checkRequired(){
     var missing = [];
-    TEMPLATE.required.forEach(function(f){
-      var input = el("f_"+f);
-      if(!input.value.trim()){ missing.push(f); input.classList.add("missing"); }
-      else input.classList.remove("missing");
+    TEMPLATE.fields.forEach(function(f){
+      if(!f.required) return;
+      var inp = el("f_"+f.id);
+      if(!inp) return;
+      if(!inp.value.trim()){ missing.push(f.label); inp.classList.add("missing"); }
+      else inp.classList.remove("missing");
     });
     return missing;
   }
@@ -129,14 +186,17 @@
   function generate(){
     var missing = checkRequired();
     if(missing.length){
-      flash("Missing required field(s): " + missing.join(", "), "bad");
+      flash("Missing: " + missing.join(", "), "bad");
       return;
     }
-    flash("Generating…", "work");
+    flash("Generating\u2026", "work");
     el("b_make").disabled = true;
 
     var data = {};
-    TEMPLATE.fields.forEach(function(f){ data[f] = val(f); });
+    TEMPLATE.fields.forEach(function(f){
+      var inp = el("f_"+f.id);
+      data[f.id] = inp ? inp.value.trim() : "";
+    });
 
     loadBinary(TEMPLATE.master).then(function(content){
       var zip = new PizZip(content);
@@ -150,8 +210,8 @@
         type: "blob",
         mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       });
-      var ref = data.TMCRef || "memo";
-      var fname = TEMPLATE.name + "_" + ref + ".docx";
+      var ref = data[TEMPLATE.refField] || "letter";
+      var fname = templateKey + "_" + ref + ".docx";
       triggerDownload(out, fname);
       flash("\u2713 Downloaded " + fname, "ok");
       el("b_make").disabled = false;
@@ -175,11 +235,16 @@
 
   el("b_make").addEventListener("click", generate);
   el("b_reset").addEventListener("click", function(){
-    TEMPLATE.fields.forEach(function(f){ el("f_"+f).value = ""; el("f_"+f).classList.remove("missing"); });
-    el("f_Date").value = deriveDate();
+    TEMPLATE.fields.forEach(function(f){
+      var inp = el("f_"+f.id);
+      if(inp){ inp.value = ""; inp.classList.remove("missing"); }
+    });
+    if(dateEl) dateEl.value = deriveDate();
     flash("");
-    el("f_MatterName").focus();
+    var first = el("f_"+TEMPLATE.fields[0].id);
+    if(first) first.focus();
   });
+
 })();
 </script>
 </body>
