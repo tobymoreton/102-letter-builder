@@ -257,6 +257,11 @@
       data[f.id] = inp ? inp.value.trim() : "";
     });
 
+    // Notice of Acting: uppercase the court and party names (court convention)
+    if("CourtName" in data) data.CourtName = data.CourtName.toUpperCase();
+    if("ClaimantName" in data) data.ClaimantName = data.ClaimantName.toUpperCase();
+    if("DefendantName" in data) data.DefendantName = data.DefendantName.toUpperCase();
+
     // Notice of Acting: derive the boolean that flips the caption/addressee.
     // True when we act for the Claimant; the master's conditional handles the rest.
     if("ActingForParty" in data){
