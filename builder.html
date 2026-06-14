@@ -41,7 +41,6 @@
 
   <div class="top">
     <span class="brandmark">tmc<span class="g"> Legal</span></span>
-    <h1>Letter Builder</h1>
   </div>
 
   <div class="card">
@@ -91,6 +90,7 @@
       displayName: "Formal Service Letter (Non-HJA)",
       master: "masters/FormalServiceNonHJA.docx",
       refField: "OurRef",
+      downloadName: "FormalService",
       fields: [
         { id:"OppoFirm",         label:"Opponent firm",            required:true  },
         { id:"OppoAddress1",     label:"Opponent address 1",       required:true  },
@@ -284,7 +284,7 @@
         mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       });
       var ref = data[TEMPLATE.refField] || "letter";
-      var fname = templateKey + "_" + ref + ".docx";
+      var fname = (TEMPLATE.downloadName || templateKey) + "_" + ref + ".docx";
       triggerDownload(out, fname);
       flash("\u2713 Downloaded " + fname, "ok");
       el("b_make").disabled = false;
