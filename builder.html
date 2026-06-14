@@ -105,6 +105,24 @@
         { id:"Date",             label:"Date",                     required:false }
       ],
       hint: "Opened from the SharePoint case button, the fields above pre-fill automatically. Check the interest figures, then click <strong>Generate &amp; download</strong>."
+    },
+    "InformalServiceLetter": {
+      displayName: "Informal Service Letter",
+      master: "masters/InformalServiceLetter.docx",
+      refField: "OurRef",
+      fields: [
+        { id:"OppoFirm",     label:"Opponent firm",        required:true  },
+        { id:"OppoAddress1", label:"Opponent address 1",   required:true  },
+        { id:"OppoAddress2", label:"Opponent address 2",   required:false },
+        { id:"OppoAddress3", label:"Opponent address 3",   required:false },
+        { id:"OppoAddress4", label:"Opponent address 4",   required:false },
+        { id:"YourRef",      label:"Opponent reference",   required:false },
+        { id:"OurRef",       label:"TMC reference",        required:true  },
+        { id:"FullCaseName", label:"Full case name",       required:true  },
+        { id:"Firm",         label:"Instructing firm",     required:true  },
+        { id:"Date",         label:"Date",                 required:false }
+      ],
+      hint: "Opened from the SharePoint case button, the fields above pre-fill automatically. Check them, then click <strong>Generate &amp; download</strong>."
     }
   };
 
