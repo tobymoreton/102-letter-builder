@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TMC Legal — Letter Builder</title>
+<style>
+  :root{ --navy:#16263f; --gold:#c2a14d; --ink:#22272e; --muted:#5f6b7a; --line:#e4e7ec; --bg:#eef1f5; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; line-height:1.5; }
+  .wrap{ max-width:760px; margin:0 auto; padding:24px 20px 56px; }
+  .top{ display:flex; align-items:center; gap:12px; margin:4px 0 20px; }
+  .brandmark{ font-size:22px; font-weight:700; color:var(--navy); letter-spacing:.5px; }
+  .brandmark .g{ color:var(--gold); }
+  .top h1{ font-size:15px; font-weight:500; color:var(--muted); margin:0; padding-left:14px; border-left:1px solid #cdd4dd; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:18px; }
+  .cap{ font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:#8a93a0; margin:0 0 10px; }
+  .doctype{ font-size:15px; font-weight:600; color:var(--navy); margin:0 0 4px; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; }
+  label{ display:block; font-size:13px; color:var(--muted); }
+  input{ width:100%; margin-top:5px; padding:9px 11px; font-size:14px; border:1px solid #cfd6df; border-radius:8px; background:#fff; color:var(--ink); }
+  input:focus{ outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(22,38,63,.12); }
+  input[readonly]{ background:#f6f8fa; color:var(--muted); }
+  .actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:4px 0 18px; }
+  button{ font-size:14px; padding:11px 20px; border-radius:9px; border:1px solid #cfd6df; background:#fff; color:var(--ink); cursor:pointer; transition:background .12s,transform .05s; }
+  button:hover{ background:#f4f6f9; }
+  button:active{ transform:scale(.98); }
+  button.primary{ background:var(--navy); color:#fff; border-color:var(--navy); font-weight:600; }
+  button.primary:hover{ background:#1d3253; }
+  button.primary:disabled{ background:#9aa6b6; border-color:#9aa6b6; cursor:not-allowed; }
+  #status{ font-size:13px; font-weight:500; min-height:18px; }
+  .ok{ color:#1d7a4d; } .bad{ color:#b4413b; } .work{ color:var(--muted); }
+  .hint{ font-size:12px; color:var(--muted); margin:14px 2px 0; }
+  .missing{ border-color:#d99 !important; background:#fdf3f3 !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <span class="brandmark">tmc<span class="g"> Legal</span></span>
+    <h1>Letter Builder</h1>
+  </div>
+
+  <div class="card">
+    <p class="doctype" id="doctype">Inter Partes Memorandum of Advice</p>
+    <p class="cap" id="caseref-cap">Case</p>
+    <div class="grid">
+      <label>Matter name (surname)<input id="f_MatterName" type="text"></label>
+      <label>Fee earner<input id="f_FeeEarner" type="text"></label>
+      <label>Draftsman<input id="f_Draftsman" type="text"></label>
+      <label>Client reference<input id="f_CaseRef" type="text"></label>
+      <label>TMC reference<input id="f_TMCRef" type="text"></label>
+      <label>Date<input id="f_Date" type="text"></label>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="b_make" class="primary">&#11015; Generate &amp; download .docx</button>
+    <button id="b_reset">Reset</button>
+    <span id="status"></span>
+  </div>
+
+  <p class="hint">Opened from the SharePoint case button, the fields above pre-fill automatically. Check them, then click <strong>Generate &amp; download</strong>. The completed memo downloads as a Word document for the draftsman to complete the figures and narrative.</p>
+
+</div>
+
+<!-- Vendored libraries (no CDN) -->
+<script src="vendor/pizzip.min.js"></script>
+<script src="vendor/pizzip-utils.min.js"></script>
+<script src="vendor/docxtemplater.js"></script>
+
+<script>
+(function(){
+  // ---- Template config: this build = InterPartesMemoOfAdvice ----
+  var TEMPLATE = {
+    name: "InterPartesMemoOfAdvice",
+    master: "masters/InterPartesMemoOfAdvice.docx",
+    // placeholder -> input element id
+    fields: ["MatterName","FeeEarner","Draftsman","CaseRef","TMCRef","Date"],
+    // which fields must be present to allow generation
+    required: ["MatterName","FeeEarner","Draftsman","CaseRef","TMCRef"]
+  };
+
+  function el(id){ return document.getElementById(id); }
+  function val(name){ return el("f_"+name).value.trim(); }
+
+  function flash(msg, cls){
+    var s = el("status"); s.textContent = msg;
+    s.className = cls || "";
+  }
+
+  function deriveDate(){
+    var now = new Date();
+    var months = ["January","February","March","April","May","June","July",
+                  "August","September","October","November","December"];
+    return now.getDate() + " " + months[now.getMonth()] + " " + now.getFullYear();
+  }
+
+  // ---- Pre-fill from URL query string (SP Infowise button) ----
+  (function prefill(){
+    var p = new URLSearchParams(window.location.search);
+    TEMPLATE.fields.forEach(function(f){
+      var v = p.get(f);
+      if(v) el("f_"+f).value = v;
+    });
+    // Date: if not supplied, derive it
+    if(!el("f_Date").value) el("f_Date").value = deriveDate();
+  })();
+
+  function loadBinary(url){
+    return new Promise(function(resolve, reject){
+      PizZipUtils.getBinaryContent(url, function(err, data){
+        if(err) reject(err); else resolve(data);
+      });
+    });
+  }
+
+  function checkRequired(){
+    var missing = [];
+    TEMPLATE.required.forEach(function(f){
+      var input = el("f_"+f);
+      if(!input.value.trim()){ missing.push(f); input.classList.add("missing"); }
+      else input.classList.remove("missing");
+    });
+    return missing;
+  }
+
+  function generate(){
+    var missing = checkRequired();
+    if(missing.length){
+      flash("Missing required field(s): " + missing.join(", "), "bad");
+      return;
+    }
+    flash("Generating…", "work");
+    el("b_make").disabled = true;
+
+    var data = {};
+    TEMPLATE.fields.forEach(function(f){ data[f] = val(f); });
+
+    loadBinary(TEMPLATE.master).then(function(content){
+      var zip = new PizZip(content);
+      var doc = new window.docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+        delimiters: { start: "[[", end: "]]" }
+      });
+      doc.render(data);
+      var out = doc.getZip().generate({
+        type: "blob",
+        mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      });
+      var ref = data.TMCRef || "memo";
+      var fname = TEMPLATE.name + "_" + ref + ".docx";
+      triggerDownload(out, fname);
+      flash("\u2713 Downloaded " + fname, "ok");
+      el("b_make").disabled = false;
+    }).catch(function(e){
+      var msg = (e && e.message) ? e.message : String(e);
+      if(e && e.properties && e.properties.errors){
+        msg = e.properties.errors.map(function(x){ return x.name + ": " + x.message; }).join("; ");
+      }
+      flash("Error: " + msg, "bad");
+      el("b_make").disabled = false;
+    });
+  }
+
+  function triggerDownload(blob, filename){
+    var a = document.createElement("a");
+    var url = URL.createObjectURL(blob);
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1500);
+  }
+
+  el("b_make").addEventListener("click", generate);
+  el("b_reset").addEventListener("click", function(){
+    TEMPLATE.fields.forEach(function(f){ el("f_"+f).value = ""; el("f_"+f).classList.remove("missing"); });
+    el("f_Date").value = deriveDate();
+    flash("");
+    el("f_MatterName").focus();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+Copy InterPartesMemoOfAdvice.docx into this folder.
+
+Source on TOBYPC:
+  ...\102 Sharepoint Case Templates\Templates\Masters\InterPartesMemoOfAdvice.docx
+
+The builder fetches masters/InterPartesMemoOfAdvice.docx at runtime, so the
+master MUST be committed into this folder for the deployed app to work.
