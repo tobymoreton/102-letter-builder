@@ -21,6 +21,8 @@
   input{ width:100%; margin-top:5px; padding:9px 11px; font-size:14px; border:1px solid #cfd6df; border-radius:8px; background:#fff; color:var(--ink); }
   input:focus{ outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(22,38,63,.12); }
   input[readonly]{ background:#f6f8fa; color:var(--muted); }
+  select{ width:100%; margin-top:5px; padding:9px 11px; font-size:14px; border:1px solid #cfd6df; border-radius:8px; background:#fff; color:var(--ink); }
+  select:focus{ outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(22,38,63,.12); }
   .actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:4px 0 18px; }
   button{ font-size:14px; padding:11px 20px; border-radius:9px; border:1px solid #cfd6df; background:#fff; color:var(--ink); cursor:pointer; transition:background .12s,transform .05s; }
   button:hover{ background:#f4f6f9; }
@@ -123,6 +125,23 @@
         { id:"Date",         label:"Date",                 required:false }
       ],
       hint: "Opened from the SharePoint case button, the fields above pre-fill automatically. Check them, then click <strong>Generate &amp; download</strong>."
+    },
+    "NoticeOfActing": {
+      displayName: "Notice of Acting",
+      master: "masters/NoticeOfActing.docx",
+      refField: "ClaimNo",
+      fields: [
+        { id:"CourtName",      label:"Court",                required:true  },
+        { id:"ClaimNo",        label:"Claim number",         required:true  },
+        { id:"ClaimantName",   label:"Claimant",             required:true  },
+        { id:"DefendantName",  label:"Defendant",            required:true  },
+        { id:"ActingForParty", label:"We act for",           required:true, options:["Claimant","Defendant"] },
+        { id:"SignatoryName",  label:"Signing costs lawyer", required:true, options:["Toby Moreton","Tom Winyard","Kelly Townshend"] },
+        { id:"DateDay",        label:"Date \u2014 day",      required:false },
+        { id:"DateMonth",      label:"Date \u2014 month",    required:false },
+        { id:"DateYear",       label:"Date \u2014 year",     required:false }
+      ],
+      hint: "Opened from the SharePoint case button, the case fields pre-fill automatically. <strong>Pick the party we act for and the signing costs lawyer</strong>, then click <strong>Generate &amp; download</strong>."
     }
   };
 
@@ -143,9 +162,20 @@
   TEMPLATE.fields.forEach(function(f){
     var lbl = document.createElement("label");
     lbl.textContent = f.label;
-    var inp = document.createElement("input");
-    inp.type = "text";
-    inp.id = "f_" + f.id;
+    var inp;
+    if(f.options){
+      inp = document.createElement("select");
+      inp.id = "f_" + f.id;
+      f.options.forEach(function(opt){
+        var o = document.createElement("option");
+        o.value = opt; o.textContent = opt;
+        inp.appendChild(o);
+      });
+    } else {
+      inp = document.createElement("input");
+      inp.type = "text";
+      inp.id = "f_" + f.id;
+    }
     lbl.appendChild(inp);
     grid.appendChild(lbl);
   });
@@ -177,6 +207,17 @@
   });
   var dateEl = el("f_Date");
   if(dateEl && !dateEl.value) dateEl.value = deriveDate();
+
+  // Notice of Acting uses split date parts (day / month / year) — derive today's if blank
+  (function deriveDateParts(){
+    var now = new Date();
+    var months = ["January","February","March","April","May","June","July",
+                  "August","September","October","November","December"];
+    var dD = el("f_DateDay"), dM = el("f_DateMonth"), dY = el("f_DateYear");
+    if(dD && !dD.value) dD.value = String(now.getDate());
+    if(dM && !dM.value) dM.value = months[now.getMonth()];
+    if(dY && !dY.value) dY.value = String(now.getFullYear());
+  })();
 
   // ================================================================
   // GENERATE
@@ -215,6 +256,15 @@
       var inp = el("f_"+f.id);
       data[f.id] = inp ? inp.value.trim() : "";
     });
+
+    // Notice of Acting: derive the boolean that flips the caption/addressee.
+    // True when we act for the Claimant; the master's conditional handles the rest.
+    if("ActingForParty" in data){
+      var afp = data.ActingForParty.trim();
+      data.ActingForClaimant = /^c/i.test(afp);
+      // Normalise the body label to canonical case regardless of how it was typed
+      data.ActingForParty = data.ActingForClaimant ? "Claimant" : "Defendant";
+    }
 
     loadBinary(TEMPLATE.master).then(function(content){
       var zip = new PizZip(content);
