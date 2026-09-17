@@ -142,6 +142,25 @@
         { id:"DateYear",       label:"Date \u2014 year",     required:false }
       ],
       hint: "Opened from the SharePoint case button, the case fields pre-fill automatically. <strong>Pick the party we act for and the signing costs lawyer</strong>, then click <strong>Generate &amp; download</strong>."
+    },
+    "Part36OfferCosts": {
+      displayName: "Part 36 Offer (Costs)",
+      master: "masters/Part36OfferCosts.docx",
+      refField: "OurRef",
+      downloadName: "Part36Offer",
+      fields: [
+        { id:"OppoFirm",     label:"Opponent firm",        required:true  },
+        { id:"OppoAddress1", label:"Opponent address 1",   required:true  },
+        { id:"OppoAddress2", label:"Opponent address 2",   required:false },
+        { id:"OppoAddress3", label:"Opponent address 3",   required:false },
+        { id:"OppoAddress4", label:"Opponent address 4",   required:false },
+        { id:"YourRef",      label:"Opponent reference",   required:false },
+        { id:"OurRef",       label:"TMC reference",        required:true  },
+        { id:"FullCaseName", label:"Full case name",       required:true  },
+        { id:"OurOffer",     label:"Offer amount (£)", required:true },
+        { id:"Date",         label:"Date",                 required:false }
+      ],
+      hint: "Opened from the SharePoint case button, the case fields pre-fill automatically. <strong>Enter the offer amount</strong>, check the rest, then click <strong>Generate &amp; download</strong>."
     }
   };
 
